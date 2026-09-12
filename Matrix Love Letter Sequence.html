@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Matrix Love Letter & Digital Rain</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600;700&family=Playfair+Display:ital,wght@0,600;1,400;1,700&family=Montserrat:wght@400;700;900&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            background-color: #030712;
+            color: #22c55e;
+            font-family: 'Fira Code', monospace;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        /* Canvas Matrix background layer */
+        #matrixCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        /* Glowing text styles */
+        .glow-green {
+            color: #22c55e;
+            text-shadow: 0 0 10px #22c55e, 0 0 20px #22c55e, 0 0 40px #15803d, 0 0 80px #166534;
+        }
+
+        .glow-pink {
+            color: #f43f5e;
+            text-shadow: 0 0 10px #f43f5e, 0 0 20px #f43f5e, 0 0 40px #be123c, 0 0 80px #9f1239;
+        }
+
+        .glow-cyan {
+            color: #06b6d4;
+            text-shadow: 0 0 10px #06b6d4, 0 0 20px #06b6d4, 0 0 40px #0e7490;
+        }
+
+        .glow-gold {
+            color: #eab308;
+            text-shadow: 0 0 10px #eab308, 0 0 25px #ca8a04;
+        }
+
+        /* Floating images animation */
+        @keyframes floatIn {
+            0% {
+                opacity: 0;
+                transform: scale(0.3) rotate(-10deg);
+            }
+            100% {
+                opacity: 0.95;
+                transform: scale(1) rotate(0deg);
+            }
+        }
+
+        /* Cascading Falling Image Effect (Top to Bottom with Blur & Sharpness Transition) */
+        @keyframes fallAndSharpen {
+            0% {
+                top: -30%;
+                opacity: 0;
+                filter: blur(20px) brightness(0.6);
+                transform: scale(0.7) rotate(-8deg);
+            }
+            35% {
+                opacity: 0.95;
+                filter: blur(0px) brightness(1.1);
+                transform: scale(1.05) rotate(0deg);
+            }
+            65% {
+                opacity: 1;
+                filter: blur(0px) brightness(1);
+                transform: scale(1) rotate(3deg);
+            }
+            100% {
+                top: 115%;
+                opacity: 0;
+                filter: blur(15px) brightness(0.5);
+                transform: scale(0.8) rotate(10deg);
+            }
+        }
+
+        .falling-photo-card {
+            position: absolute;
+            animation: fallAndSharpen 7.5s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+            box-shadow: 0 10px 35px rgba(34, 197, 94, 0.4), 0 0 15px rgba(244, 63, 94, 0.3);
+            border: 2px solid rgba(34, 197, 94, 0.8);
+            border-radius: 1rem;
+            overflow: hidden;
+            background: #000;
+        }
+
+        .floating-img {
+            animation: floatIn 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+            box-shadow: 0 0 15px rgba(34, 197, 94, 0.4);
+            border: 2px solid #22c55e;
+        }
+
+        /* Gift box pulse animation */
+        @keyframes giftPulse {
+            0%, 100% {
+                transform: scale(1);
+                box-shadow: 0 0 20px rgba(244, 63, 94, 0.6);
+            }
+            50% {
+                transform: scale(1.08);
+                box-shadow: 0 0 35px rgba(244, 63, 94, 0.9);
+            }
+        }
+
+        .gift-btn {
+            animation: giftPulse 2s infinite ease-in-out;
+        }
+
+        /* Code block watermark overlay */
+        .code-watermark {
+            font-family: 'Fira Code', monospace;
+            font-size: 11px;
+            color: rgba(34, 197, 94, 0.45);
+            pointer-events: none;
+            line-height: 1.4;
+            white-space: pre;
+            text-shadow: 0 0 3px rgba(34, 197, 94, 0.3);
+        }
+
+        /* Custom Scrollbar for letter modal */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.8);
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #22c55e;
+            border-radius: 4px;
+        }
+
+        /* Letter typography */
+        .letter-content {
+            font-family: 'Playfair Display', serif;
+            color: #f3f4f6;
+            line-height: 1.8;
+        }
+        .letter-content p {
+            margin-bottom: 1.2rem;
+            text-indent: 1rem;
+        }
+
+        /* Code overlay on the video bottom half */
+        .code-overlay-container {
+            background: rgba(3, 7, 18, 0.8);
+            backdrop-filter: blur(6px);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+        }
+    </style>
+</head>
+<body class="relative w-screen h-screen overflow-hidden select-none bg-gray-950">
+
+    <!-- Background Matrix Canvas -->
+    <canvas id="matrixCanvas"></canvas>
+
+    <!-- Code Display Watermark Overlay (As in the video) -->
+    <div class="absolute bottom-16 left-3 sm:left-6 z-10 max-w-[92vw] sm:max-w-md pointer-events-none code-overlay-container p-3 sm:p-4 rounded-xl shadow-2xl">
+        <div class="flex items-center gap-2 mb-2 pb-1 border-b border-green-500/30">
+            <div class="w-3 h-3 rounded-full bg-red-500/80"></div>
+            <div class="w-3 h-3 rounded-full bg-yellow-500/80"></div>
+            <div class="w-3 h-3 rounded-full bg-green-500/80"></div>
+            <span class="text-xs text-green-400/70 font-mono ml-2">renderLetter.js</span>
+        </div>
+        <pre class="code-watermark overflow-hidden text-[10px] sm:text-[11px]">
+<span class="text-purple-400">function</span> <span class="text-blue-400">renderLetterFull</span>() {
+  <span class="text-purple-400">const</span> container = document.<span class="text-yellow-300">getElementById</span>(<span class="text-emerald-300">"letterContent"</span>);
+  container.innerHTML = <span class="text-emerald-300">""</span>;
+  <span class="text-purple-400">const</span> paragraphs = letterText
+    .<span class="text-yellow-300">split</span>(<span class="text-emerald-300">"\n\n"</span>)
+    .<span class="text-yellow-300">filter</span>(p => p.<span class="text-yellow-300">trim</span>().length > <span class="text-orange-300">0</span>);
+  paragraphs.<span class="text-yellow-300">forEach</span>((para, i) => {
+    <span class="text-purple-400">const</span> p = document.<span class="text-yellow-300">createElement</span>(<span class="text-emerald-300">"p"</span>);
+    para.<span class="text-yellow-300">split</span>(<span class="text-emerald-300">"\n"</span>).<span class="text-yellow-300">forEach</span>((line, j) => {
+      <span class="text-purple-400">if</span> (j > <span class="text-orange-300">0</span>) p.<span class="text-yellow-300">appendChild</span>(document.<span class="text-yellow-300">createElement</span>(<span class="text-emerald-300">"br"</span>));
+      p.<span class="text-yellow-300">appendChild</span>(document.<span class="text-yellow-300">createTextNode</span>(line));
+    });
+    container.<span class="text-yellow-300">appendChild</span>(p);
+  });
+}</pre>
+    </div>
+
+    <!-- MAIN INTERACTIVE STAGE -->
+    <div id="stageContainer" class="relative z-20 w-full h-full flex flex-col items-center justify-center p-4">
+        
+        <!-- Big Text Display (Countdown, Date, Name, Title) -->
+        <div id="textSequenceOverlay" class="text-center transition-all duration-500 ease-in-out pointer-events-none">
+            <h1 id="mainDisplayTitle" class="text-6xl sm:text-8xl md:text-9xl font-black tracking-widest glow-green scale-100 transition-all duration-300">
+                3
+            </h1>
+        </div>
+
+        <!-- Floating Image Gallery Layer -->
+        <div id="galleryContainer" class="absolute inset-0 z-10 pointer-events-none hidden">
+            <!-- Dynamic Waterfall Falling Images Layer -->
+            <div id="waterfallImageLayer" class="absolute inset-0 pointer-events-none z-0"></div>
+
+            <!-- Center Main Character Image -->
+            <div id="centerPhoto" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 transition-all duration-700 opacity-0 scale-50 z-20">
+                <div class="relative group">
+                    <img id="mainPortraitImg" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=800&auto=format&fit=crop" 
+                         alt="Main Portrait" 
+                         class="w-48 h-64 sm:w-64 sm:h-80 md:w-72 md:h-96 object-cover rounded-2xl shadow-2xl border-2 border-green-400/80">
+                    <div class="absolute inset-0 bg-green-500/10 rounded-2xl pointer-events-none"></div>
+                    <div class="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-black/80 border border-green-500 text-green-300 px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap glow-green">
+                        <span id="centerPhotoName">CÚC TỊNH Y</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Surrounding Floating Mini Photos -->
+            <img id="imgTopLeft" src="https://images.unsplash.com/photo-1517841905240-472988babdf9?q=80&w=400&auto=format&fit=crop" 
+                 class="floating-img absolute top-[8%] left-[5%] sm:top-[12%] sm:left-[12%] w-20 h-24 sm:w-28 sm:h-36 object-cover rounded-xl border border-cyan-400 hidden z-10" alt="Gallery 1">
+            
+            <img id="imgTopRight" src="https://images.unsplash.com/photo-1524504388940-b1c1722653e1?q=80&w=400&auto=format&fit=crop" 
+                 class="floating-img absolute top-[10%] right-[6%] sm:top-[15%] sm:right-[14%] w-22 h-28 sm:w-32 sm:h-40 object-cover rounded-xl border border-pink-400 hidden z-10" alt="Gallery 2">
+            
+            <img id="imgBottomLeft" src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=400&auto=format&fit=crop" 
+                 class="floating-img absolute bottom-[18%] left-[8%] sm:bottom-[22%] sm:left-[16%] w-20 h-24 sm:w-28 sm:h-36 object-cover rounded-xl border border-green-400 hidden z-10" alt="Gallery 3">
+            
+            <img id="imgBottomRight" src="https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?q=80&w=400&auto=format&fit=crop" 
+                 class="floating-img absolute bottom-[20%] right-[8%] sm:bottom-[25%] sm:right-[15%] w-22 h-28 sm:w-30 sm:h-38 object-cover rounded-xl border border-yellow-400 hidden z-10" alt="Gallery 4">
+        </div>
+
+        <!-- Gift Box Open Button (Triggers Love Letter Modal) -->
+        <div id="giftBoxContainer" class="absolute bottom-28 sm:bottom-20 z-30 hidden flex-col items-center gap-3">
+            <button id="openGiftBtn" class="gift-btn bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-500 hover:to-pink-500 text-white font-bold py-3 px-6 sm:px-8 rounded-full shadow-2xl flex items-center gap-3 border-2 border-pink-300 transition-transform active:scale-95 cursor-pointer">
+                <i class="fa-solid fa-gift text-2xl animate-bounce text-yellow-300"></i>
+                <span class="text-sm sm:text-base tracking-wider uppercase font-semibold">NHẤN ĐỂ MỞ QUÀ</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- LOVE LETTER POPUP MODAL -->
+    <div id="letterModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md opacity-0 pointer-events-none transition-all duration-500">
+        <div class="relative w-full max-w-lg bg-gray-900/95 border-2 border-green-500/60 rounded-2xl shadow-[0_0_50px_rgba(34,197,94,0.3)] overflow-hidden flex flex-col max-h-[85vh]">
+            
+            <!-- Modal Header -->
+            <div class="p-4 border-b border-green-500/30 flex items-center justify-between bg-gray-950/80">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-envelope-open-text text-green-400 text-lg"></i>
+                    <h3 class="text-green-400 font-bold text-base tracking-wide">Thư Gửi Người Đặc Biệt</h3>
+                </div>
+                <button id="closeLetterBtn" class="w-8 h-8 rounded-full bg-gray-800 hover:bg-red-600/80 text-gray-300 hover:text-white flex items-center justify-center transition-colors">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- Modal Body: Styled Letter Text Container -->
+            <div class="p-6 overflow-y-auto custom-scrollbar flex-1 bg-gradient-to-b from-gray-900 to-gray-950">
+                <div class="text-center mb-6">
+                    <span class="text-xs font-mono text-green-400/60 uppercase tracking-widest">--- Special Message ---</span>
+                    <h2 id="letterTitleDisplay" class="text-2xl font-serif font-bold text-pink-400 mt-1 italic glow-pink">Gửi em...</h2>
+                </div>
+
+                <!-- Dynamically rendered paragraph structure inside this element -->
+                <div id="letterContent" class="letter-content text-gray-200 text-sm sm:text-base space-y-4 font-sans">
+                    <!-- Javascript populates text line by line here -->
+                </div>
+
+                <div class="mt-8 text-right italic font-serif text-pink-400">
+                    <p class="text-xs text-gray-400 font-sans">Chúc em luôn mỉm cười và hạnh phúc!</p>
+                    <p class="font-bold text-base mt-1 glow-pink">Mãi yêu em ❤️</p>
+                </div>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="p-3 border-t border-green-500/20 bg-gray-950/80 flex justify-end">
+                <button id="closeModalFooterBtn" class="px-5 py-1.5 rounded-lg bg-green-600 hover:bg-green-500 text-black font-bold text-xs tracking-wider transition-colors">
+                    ĐÓNG
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- BOTTOM / TOP INTERACTIVE CONTROLS TOOLBAR -->
+    <div class="fixed top-4 right-4 z-40 flex items-center gap-2">
+        <!-- Audio toggle button -->
+        <button id="audioToggleBtn" class="w-10 h-10 rounded-full bg-gray-900/80 border border-green-500/50 text-green-400 flex items-center justify-center shadow-lg hover:bg-green-950 transition-colors">
+            <i id="audioIcon" class="fa-solid fa-volume-xmark"></i>
+        </button>
+
+        <!-- Edit modal trigger button -->
+        <button id="editContentBtn" class="w-10 h-10 rounded-full bg-gray-900/80 border border-green-500/50 text-green-400 flex items-center justify-center shadow-lg hover:bg-green-950 transition-colors" title="Tùy chỉnh nội dung & ảnh">
+            <i class="fa-solid fa-sliders"></i>
+        </button>
+
+        <!-- Replay sequence button -->
+        <button id="replayBtn" class="w-10 h-10 rounded-full bg-gray-900/80 border border-green-500/50 text-green-400 flex items-center justify-center shadow-lg hover:bg-green-950 transition-colors" title="Phát lại từ đầu">
+            <i class="fa-solid fa-rotate-right"></i>
+        </button>
+    </div>
+
+    <!-- CUSTOMIZATION MODAL (EDIT NAMES & LETTER & UPLOAD PHOTOS) -->
+    <div id="editModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md hidden">
+        <div class="w-full max-w-md bg-gray-900 border border-green-500/50 rounded-xl p-5 text-gray-200 shadow-2xl">
+            <h3 class="text-green-400 font-bold text-lg mb-3 flex items-center gap-2">
+                <i class="fa-solid fa-sliders"></i> Tùy chỉnh thông điệp & Hình ảnh
+            </h3>
+            
+            <div class="space-y-3 text-xs sm:text-sm">
+                <!-- Image Upload Button -->
+                <div class="bg-gray-950 p-3 rounded-lg border border-green-500/30 text-center">
+                    <label class="block text-green-400 font-semibold mb-1 cursor-pointer">
+                        <i class="fa-solid fa-cloud-arrow-up text-lg mr-1"></i> Tải ảnh từ thiết bị của bạn
+                    </label>
+                    <input type="file" id="userPhotoInput" multiple accept="image/*" class="hidden">
+                    <button type="button" onclick="document.getElementById('userPhotoInput').click()" class="mt-1 bg-green-600/80 hover:bg-green-500 text-black font-bold py-1.5 px-4 rounded text-xs transition-colors">
+                        Chọn tệp ảnh
+                    </button>
+                    <p id="uploadStatusText" class="text-[11px] text-gray-400 mt-1">Đã chọn ảnh mặc định</p>
+                </div>
+
+                <div>
+                    <label class="block text-gray-400 mb-1">Tên hiển thị:</label>
+                    <input type="text" id="inputName" class="w-full bg-gray-950 border border-green-500/40 rounded px-3 py-2 text-green-300 focus:outline-none focus:border-green-400" value="CÚC TỊNH Y">
+                </div>
+                <div>
+                    <label class="block text-gray-400 mb-1">Ngày kỷ niệm:</label>
+                    <input type="text" id="inputDate" class="w-full bg-gray-950 border border-green-500/40 rounded px-3 py-2 text-green-300 focus:outline-none focus:border-green-400" value="18.06.2026">
+                </div>
+                <div>
+                    <label class="block text-gray-400 mb-1">Nội dung bức thư:</label>
+                    <textarea id="inputText" rows="4" class="w-full bg-gray-950 border border-green-500/40 rounded px-3 py-2 text-green-300 focus:outline-none focus:border-green-400 custom-scrollbar"></textarea>
+                </div>
+            </div>
+
+            <div class="mt-4 flex justify-end gap-3">
+                <button id="cancelEditBtn" class="px-4 py-2 rounded bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs">Hủy</button>
+                <button id="saveEditBtn" class="px-4 py-2 rounded bg-green-600 hover:bg-green-500 text-black font-bold text-xs">Lưu & Phát Lại</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- MATRIX RAIN CANVAS ANIMATION ---
+        const canvas = document.getElementById("matrixCanvas");
+        const ctx = canvas.getContext("2d");
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        resizeCanvas();
+        window.addEventListener("resize", resizeCanvas);
+
+        // Matrix character set (Katakana, Latin, Numbers)
+        const katakana = "アァカサタナハマヤャラワガザダバパイィキシチニヒミリヰギジヂビピウゥクスツヌフムユュルグズブヅプエェケセテネヘメレヱゲゼデベペオォコソトノホモヨョロヲゴゾドボポヴッン";
+        const latin = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%&*";
+        const alphabet = katakana + latin;
+
+        const fontSize = 16;
+        let columns = Math.floor(window.innerWidth / fontSize);
+        let drops = [];
+
+        function initDrops() {
+            columns = Math.floor(window.innerWidth / fontSize);
+            drops = [];
+            for (let i = 0; i < columns; i++) {
+                drops[i] = Math.floor(Math.random() * -50);
+            }
+        }
+        initDrops();
+        window.addEventListener("resize", initDrops);
+
+        function drawMatrix() {
+            ctx.fillStyle = "rgba(3, 7, 18, 0.08)";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.font = fontSize + "px 'Fira Code', monospace";
+
+            for (let i = 0; i < drops.length; i++) {
+                const text = alphabet.charAt(Math.floor(Math.random() * alphabet.length));
+                
+                // Leading glowing character
+                ctx.fillStyle = "#a7f3d0";
+                ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+
+                // Trail character
+                ctx.fillStyle = "#22c55e";
+                ctx.fillText(text, i * fontSize, (drops[i] - 1) * fontSize);
+
+                if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+                    drops[i] = 0;
+                }
+                drops[i]++;
+            }
+        }
+
+        let matrixInterval = setInterval(drawMatrix, 33);
+
+        // --- AUDIO SOUND EFFECTS GENERATOR ---
+        let audioCtx = null;
+        let audioEnabled = false;
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        function playBeep(freq = 440, duration = 0.1, type = "sine") {
+            if (!audioEnabled) return;
+            initAudio();
+            try {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + duration);
+            } catch (e) {}
+        }
+
+        const audioToggleBtn = document.getElementById("audioToggleBtn");
+        const audioIcon = document.getElementById("audioIcon");
+
+        audioToggleBtn.addEventListener("click", () => {
+            audioEnabled = !audioEnabled;
+            if (audioEnabled) {
+                initAudio();
+                audioIcon.className = "fa-solid fa-volume-high";
+                playBeep(880, 0.2);
+            } else {
+                audioIcon.className = "fa-solid fa-volume-xmark";
+            }
+        });
+
+        // --- STREAMING_CHUNK:Configuring state data and sequence timeline control... ---
+        // Default configuration values
+        let userImages = [
+            "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=800&auto=format&fit=crop",
+            "https://images.unsplash.com/photo-1517841905240-472988babdf9?q=80&w=400&auto=format&fit=crop",
+            "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?q=80&w=400&auto=format&fit=crop",
+            "https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=400&auto=format&fit=crop",
+            "https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?q=80&w=400&auto=format&fit=crop"
+        ];
+
+        let config = {
+            name: "CÚC TỊNH Y",
+            date: "18.06.2026",
+            letterText: `Gửi em...\n\nMong mọi điều tốt đẹp nhất đối với em.\nCảm ơn em vì đã xuất hiện và làm cho thế giới của anh trở nên rực rỡ hơn.\n\nBình yên không phải là lúc sóng yên biển lặng, mà là khi giữa bão tố, anh vẫn có em đồng hành.\n\nChúc em luôn giữ vững nụ cười rạng rỡ ấy và thật hạnh phúc nhé!`
+        };
+
+        // UI Element References
+        const mainDisplayTitle = document.getElementById("mainDisplayTitle");
+        const galleryContainer = document.getElementById("galleryContainer");
+        const centerPhoto = document.getElementById("centerPhoto");
+        const mainPortraitImg = document.getElementById("mainPortraitImg");
+        const centerPhotoName = document.getElementById("centerPhotoName");
+        const imgTopLeft = document.getElementById("imgTopLeft");
+        const imgTopRight = document.getElementById("imgTopRight");
+        const imgBottomLeft = document.getElementById("imgBottomLeft");
+        const imgBottomRight = document.getElementById("imgBottomRight");
+        const waterfallImageLayer = document.getElementById("waterfallImageLayer");
+        const giftBoxContainer = document.getElementById("giftBoxContainer");
+        const letterModal = document.getElementById("letterModal");
+        const letterContent = document.getElementById("letterContent");
+
+        // Handle Image Uploads from device
+        const userPhotoInput = document.getElementById("userPhotoInput");
+        const uploadStatusText = document.getElementById("uploadStatusText");
+
+        userPhotoInput.addEventListener("change", (e) => {
+            const files = e.target.files;
+            if (files && files.length > 0) {
+                userImages = [];
+                for (let i = 0; i < files.length; i++) {
+                    userImages.push(URL.createObjectURL(files[i]));
+                }
+                uploadStatusText.innerText = `Đã tải lên ${files.length} ảnh!`;
+                uploadStatusText.className = "text-[11px] text-green-400 font-semibold mt-1";
+                updateImageSources();
+            }
+        });
+
+        function updateImageSources() {
+            if (userImages.length > 0) mainPortraitImg.src = userImages[0];
+            if (userImages.length > 1) imgTopLeft.src = userImages[1];
+            if (userImages.length > 2) imgTopRight.src = userImages[2];
+            if (userImages.length > 3) imgBottomLeft.src = userImages[3];
+            if (userImages.length > 4) imgBottomRight.src = userImages[4];
+        }
+
+        /* Spawns cascading top-to-bottom falling photos with blur to sharp transitions */
+        function triggerTopToBottomImageWaterfall() {
+            waterfallImageLayer.innerHTML = "";
+            const imageCount = Math.max(userImages.length, 6);
+
+            for (let i = 0; i < imageCount; i++) {
+                setTimeout(() => {
+                    const card = document.createElement("div");
+                    card.className = "falling-photo-card";
+                    
+                    // Random horizontal positioning and size
+                    const leftPos = Math.floor(Math.random() * 70) + 10; 
+                    const cardWidth = Math.floor(Math.random() * 60) + 120; // 120px to 180px
+                    
+                    card.style.left = `${leftPos}%`;
+                    card.style.width = `${cardWidth}px`;
+                    card.style.height = `${Math.floor(cardWidth * 1.3)}px`;
+
+                    const img = document.createElement("img");
+                    img.src = userImages[i % userImages.length];
+                    img.className = "w-full h-full object-cover";
+
+                    card.appendChild(img);
+                    waterfallImageLayer.appendChild(card);
+
+                    // Remove card after animation completes
+                    setTimeout(() => card.remove(), 7600);
+                }, i * 750);
+            }
+        }
+
+        let sequenceTimeouts = [];
+
+        function clearAllTimeouts() {
+            sequenceTimeouts.forEach(t => clearTimeout(t));
+            sequenceTimeouts = [];
+        }
+
+        function runSequence() {
+            clearAllTimeouts();
+            updateImageSources();
+
+            // Reset UI States
+            mainDisplayTitle.style.opacity = "1";
+            mainDisplayTitle.className = "text-7xl sm:text-8xl md:text-9xl font-black tracking-widest glow-green scale-100 transition-all duration-300";
+            galleryContainer.classList.add("hidden");
+            centerPhoto.classList.add("opacity-0", "scale-50");
+            imgTopLeft.classList.add("hidden");
+            imgTopRight.classList.add("hidden");
+            imgBottomLeft.classList.add("hidden");
+            imgBottomRight.classList.add("hidden");
+            giftBoxContainer.classList.add("hidden");
+            giftBoxContainer.classList.remove("flex");
+            waterfallImageLayer.innerHTML = "";
+
+            // Step 1: Countdown 3
+            mainDisplayTitle.innerText = "3";
+            playBeep(523, 0.15);
+
+            // Step 2: Countdown 2
+            sequenceTimeouts.push(setTimeout(() => {
+                mainDisplayTitle.innerText = "2";
+                mainDisplayTitle.className = "text-7xl sm:text-8xl md:text-9xl font-black tracking-widest glow-cyan scale-110 transition-all duration-300";
+                playBeep(587, 0.15);
+            }, 1200));
+
+            // Step 3: Countdown 1
+            sequenceTimeouts.push(setTimeout(() => {
+                mainDisplayTitle.innerText = "1";
+                mainDisplayTitle.className = "text-7xl sm:text-8xl md:text-9xl font-black tracking-widest glow-pink scale-125 transition-all duration-300";
+                playBeep(659, 0.15);
+            }, 2400));
+
+            // Step 4: Display Date String
+            sequenceTimeouts.push(setTimeout(() => {
+                mainDisplayTitle.innerText = config.date;
+                mainDisplayTitle.className = "text-4xl sm:text-6xl md:text-7xl font-bold tracking-wider glow-gold transition-all duration-500";
+                playBeep(784, 0.25);
+            }, 3600));
+
+            // Step 5: Display "I LOVE YOU"
+            sequenceTimeouts.push(setTimeout(() => {
+                mainDisplayTitle.innerText = "I LOVE YOU";
+                mainDisplayTitle.className = "text-5xl sm:text-7xl md:text-8xl font-black tracking-widest glow-pink transition-all duration-500";
+                playBeep(1046, 0.3);
+            }, 5200));
+
+            // Step 6: Display Target Name (e.g., "CÚC TỊNH Y")
+            sequenceTimeouts.push(setTimeout(() => {
+                mainDisplayTitle.innerText = config.name;
+                mainDisplayTitle.className = "text-4xl sm:text-6xl md:text-7xl font-extrabold tracking-widest glow-green transition-all duration-500";
+                centerPhotoName.innerText = config.name;
+                playBeep(880, 0.3);
+            }, 6800));
+
+            // Step 7: Fade out big title & Show Floating Gallery + Top-to-Bottom Falling Images
+            sequenceTimeouts.push(setTimeout(() => {
+                mainDisplayTitle.style.opacity = "0";
+                galleryContainer.classList.remove("hidden");
+
+                // Launch top-to-bottom falling images waterfall sequence with blur & sharpness transition
+                triggerTopToBottomImageWaterfall();
+
+                // Reveal central portrait
+                setTimeout(() => {
+                    centerPhoto.classList.remove("opacity-0", "scale-50");
+                    centerPhoto.classList.add("opacity-100", "scale-100");
+                }, 100);
+
+                // Reveal mini surrounding gallery images sequentially
+                setTimeout(() => imgTopLeft.classList.remove("hidden"), 400);
+                setTimeout(() => imgTopRight.classList.remove("hidden"), 800);
+                setTimeout(() => imgBottomLeft.classList.remove("hidden"), 1200);
+                setTimeout(() => imgBottomRight.classList.remove("hidden"), 1600);
+
+                // Show Gift Box trigger
+                setTimeout(() => {
+                    giftBoxContainer.classList.remove("hidden");
+                    giftBoxContainer.classList.add("flex");
+                }, 2000);
+
+            }, 8500));
+        }
+
+        /**
+         * Recreates the exact JavaScript function from the code overlay in the TikTok video:
+         * Parses the string into paragraphs separated by double newline '\n\n',
+         * creates <p> elements, handles inner linebreaks '\n', and appends to container.
+         */
+        function renderLetterFull() {
+            const container = document.getElementById("letterContent");
+            container.innerHTML = "";
+            
+            const paragraphs = config.letterText
+                .split("\n\n")
+                .filter(p => p.trim().length > 0);
+
+            paragraphs.forEach((para, i) => {
+                const p = document.createElement("p");
+                para.split("\n").forEach((line, j) => {
+                    if (j > 0) p.appendChild(document.createElement("br"));
+                    p.appendChild(document.createTextNode(line));
+                });
+                container.appendChild(p);
+            });
+        }
+
+        // --- STREAMING_CHUNK:Binding event listeners for modals and controls... ---
+        // Modal Open / Close Handlers
+        document.getElementById("openGiftBtn").addEventListener("click", () => {
+            renderLetterFull();
+            letterModal.classList.remove("opacity-0", "pointer-events-none");
+            letterModal.classList.add("opacity-100", "pointer-events-auto");
+            playBeep(1200, 0.2, "triangle");
+        });
+
+        function closeLetterModal() {
+            letterModal.classList.remove("opacity-100", "pointer-events-auto");
+            letterModal.classList.add("opacity-0", "pointer-events-none");
+        }
+
+        document.getElementById("closeLetterBtn").addEventListener("click", closeLetterModal);
+        document.getElementById("closeModalFooterBtn").addEventListener("click", closeLetterModal);
+
+        // Replay Button
+        document.getElementById("replayBtn").addEventListener("click", () => {
+            closeLetterModal();
+            runSequence();
+        });
+
+        // Edit Content Modal logic
+        const editModal = document.getElementById("editModal");
+        const inputName = document.getElementById("inputName");
+        const inputDate = document.getElementById("inputDate");
+        const inputText = document.getElementById("inputText");
+
+        document.getElementById("editContentBtn").addEventListener("click", () => {
+            inputName.value = config.name;
+            inputDate.value = config.date;
+            inputText.value = config.letterText;
+            editModal.classList.remove("hidden");
+        });
+
+        document.getElementById("cancelEditBtn").addEventListener("click", () => {
+            editModal.classList.add("hidden");
+        });
+
+        document.getElementById("saveEditBtn").addEventListener("click", () => {
+            config.name = inputName.value.trim() || "CÚC TỊNH Y";
+            config.date = inputDate.value.trim() || "18.06.2026";
+            config.letterText = inputText.value || "";
+            editModal.classList.add("hidden");
+            closeLetterModal();
+            runSequence();
+        });
+
+        // Start animation sequence on window load
+        window.onload = function() {
+            runSequence();
+        };
+    </script>
+</body>
+</html>
